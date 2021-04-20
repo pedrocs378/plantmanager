@@ -1,19 +1,19 @@
-import { StyleSheet } from 'react-native'
+import { StyleSheet } from "react-native";
 
-import colors from '../../styles/colors'
+import colors from "../../styles/colors";
+import fonts from "../../styles/fonts";
 
 export const styles = StyleSheet.create({
-	button: {
+	container: {
 		backgroundColor: colors.green,
-		justifyContent: 'center',
-		alignItems: 'center',
-		borderRadius: 16,
-		marginBottom: 10,
 		height: 56,
-		width: 56
+		borderRadius: 16,
+		justifyContent: 'center',
+		alignItems: 'center'
 	},
-	buttonText: {
+	text: {
+		fontSize: 16,
 		color: colors.white,
-		fontSize: 24
+		fontFamily: fonts.heading
 	}
 })
