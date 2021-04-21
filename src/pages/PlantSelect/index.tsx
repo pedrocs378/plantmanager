@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from 'react'
-import { FlatList, SafeAreaView, Text, View } from 'react-native'
+import { ActivityIndicator, FlatList, SafeAreaView, Text, View } from 'react-native'
 
 import { EnviromentButton } from '../../components/EnviromentButton'
 import { Header } from '../../components/Header'
+import { Load } from '../../components/Load'
 import { PlantCardPrimary } from '../../components/PlantCardPrimary'
 
 import { api } from '../../services/api'
+import colors from '../../styles/colors'
 
 import { styles } from './styles'
 
@@ -31,7 +33,12 @@ export function PlantSelect() {
 	const [environments, setEnvironments] = useState<Environment[]>([])
 	const [plants, setPlants] = useState<Plant[]>([])
 	const [filteredPlants, setFilteredPlants] = useState<Plant[]>([])
+	const [loading, setLoading] = useState(true)
 	const [environmentSelected, setEnvironmentSelected] = useState('all')
+
+	const [page, setPage] = useState(1)
+	const [loadingMore, setLoadingMore] = useState(false)
+	const [loadedAll, setLoadedAll] = useState(false)
 
 	const handleEnvironmentSelected = useCallback((environment: string) => {
 		setEnvironmentSelected(environment)
@@ -47,6 +54,37 @@ export function PlantSelect() {
 		setFilteredPlants(filtered)
 	}, [plants])
 
+	async function fetchPlants() {
+		api.get(`/plants?_sort=name&_order=asc&_page=${page}&_limit=7`).then(response => {
+			if (!response.data) {
+				return setLoading(true)
+			}
+
+			if (page > 1) {
+				setPlants(oldValue => [...oldValue, ...response.data])
+				setFilteredPlants(oldValue => [...oldValue, ...response.data])
+			} else {
+				setPlants(response.data)
+				setFilteredPlants(response.data)
+			}
+		}).finally(() => {
+			setLoading(false)
+			setLoadingMore(false)
+		})
+	}
+
+	function handleFetchMore(distance: number) {
+		if (distance < 1) {
+			return
+		}
+
+		setLoadingMore(true)
+		setPage(oldValue => oldValue + 1)
+		fetchPlants()
+	}
+
+
+
 	useEffect(() => {
 		api.get('/plants_environments?_sort=title&_order=asc').then(response => {
 			setEnvironments([
@@ -60,11 +98,12 @@ export function PlantSelect() {
 	}, [])
 
 	useEffect(() => {
-		api.get('/plants?_sort=name&_order=asc').then(response => {
-			setPlants(response.data)
-			setFilteredPlants(response.data)
-		})
+		fetchPlants()
 	}, [])
+
+	if (loading) {
+		return <Load />
+	}
 
 	return (
 		<SafeAreaView style={styles.container}>
@@ -103,6 +142,11 @@ export function PlantSelect() {
 					renderItem={({ item }) => (
 						<PlantCardPrimary key={item.id} data={item} />
 					)}
+					onEndReachedThreshold={0.1}
+					onEndReached={({ distanceFromEnd }) => handleFetchMore(distanceFromEnd)}
+					ListFooterComponent={
+						loadingMore ? <ActivityIndicator color={colors.green} /> : null
+					}
 				/>
 			</View>
 
