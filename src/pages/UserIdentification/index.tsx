@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigation } from '@react-navigation/core'
-import { SafeAreaView, Text, TextInput, View, KeyboardAvoidingView, TouchableWithoutFeedback, Platform, Keyboard } from 'react-native'
+import { SafeAreaView, Text, TextInput, View, KeyboardAvoidingView, TouchableWithoutFeedback, Platform, Keyboard, ToastAndroid } from 'react-native'
+import AsyncStorage from '@react-native-async-storage/async-storage'
 
 import { Button } from '../../components/Button'
 import colors from '../../styles/colors'
@@ -24,8 +25,18 @@ export function UserIdentification() {
 		setName(text)
 	}
 
-	function handleSubmit() {
-		navigation.navigate('Confirmation')
+	async function handleSubmit() {
+		if (!name.trim()) {
+			return ToastAndroid.show('Você deve informar o nome primeiro 😥', ToastAndroid.LONG)
+		}
+
+		try {
+			await AsyncStorage.setItem('@plantmanager:user', name)
+			navigation.navigate('Confirmation')
+		} catch {
+			ToastAndroid.show('Não foi possivel salvar o seu nome.', ToastAndroid.LONG)
+		}
+
 	}
 
 	return (
