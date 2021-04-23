@@ -5,6 +5,7 @@ import ptBR from 'date-fns/locale/pt-BR'
 
 import { Header } from '../../components/Header'
 import { PlantCardSecondary } from '../../components/PlantCardSecondary'
+import { Load } from '../../components/Load'
 
 import { loadPlant, PlantProps } from '../../libs/storage'
 import waterdrop from '../../assets/waterdrop.png'
@@ -33,6 +34,10 @@ export function MyPlants() {
 
 		loadStoragedData()
 	}, [loadPlant])
+
+	if (loading) {
+		return <Load />
+	}
 
 	return (
 		<View style={styles.container}>
