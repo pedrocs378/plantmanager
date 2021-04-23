@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react'
-import { Image, Text, View, FlatList } from 'react-native'
+import React, { useCallback, useEffect, useState } from 'react'
+import { Image, Text, View, FlatList, Alert } from 'react-native'
 import { formatDistance } from 'date-fns'
 import ptBR from 'date-fns/locale/pt-BR'
 
@@ -7,7 +7,8 @@ import { Header } from '../../components/Header'
 import { PlantCardSecondary } from '../../components/PlantCardSecondary'
 import { Load } from '../../components/Load'
 
-import { loadPlant, PlantProps } from '../../libs/storage'
+import { loadPlant, PlantProps, removePlant } from '../../libs/storage'
+
 import waterdrop from '../../assets/waterdrop.png'
 
 import { styles } from './styles'
@@ -17,19 +18,48 @@ export function MyPlants() {
 	const [loading, setLoading] = useState(true)
 	const [nextWatered, setNextWatered] = useState('')
 
+	const handleRemove = useCallback((plant: PlantProps) => {
+		Alert.alert('Remover', `Deseja remover a ${plant.name}?`, [
+			{
+				text: 'Não 🙏',
+				style: 'cancel'
+			},
+			{
+				text: 'Sim 😥',
+				onPress: async () => {
+					try {
+						await removePlant(plant.id)
+
+						setMyPlants(oldData => {
+							return oldData.filter(item => item.id !== plant.id)
+						})
+					} catch {
+						Alert.alert('Não foi possivel remover! 😥')
+					}
+				}
+			}
+		])
+	}, [])
+
 	useEffect(() => {
 		async function loadStoragedData() {
-			const plantsStoraged = await loadPlant()
+			try {
+				const plantsStoraged = await loadPlant()
 
-			const nextTime = formatDistance(
-				new Date(plantsStoraged[0].dateTimeNotification).getTime(),
-				new Date().getTime(),
-				{ locale: ptBR }
-			)
+				const nextTime = formatDistance(
+					new Date(plantsStoraged[0].dateTimeNotification).getTime(),
+					new Date().getTime(),
+					{ locale: ptBR }
+				)
 
-			setNextWatered(`Não esqueça de regar a ${plantsStoraged[0].name} à aproximadamente ${nextTime}`)
-			setMyPlants(plantsStoraged)
-			setLoading(false)
+				setNextWatered(`Não esqueça de regar a ${plantsStoraged[0].name} à aproximadamente ${nextTime}`)
+				setMyPlants(plantsStoraged)
+			} catch {
+				setNextWatered('Não há plantas para serem regadas')
+				setMyPlants([])
+			} finally {
+				setLoading(false)
+			}
 		}
 
 		loadStoragedData()
@@ -65,7 +95,11 @@ export function MyPlants() {
 					keyExtractor={item => String(item.id)}
 					renderItem={({ item }) => {
 						return (
-							<PlantCardSecondary key={item.id} data={item} />
+							<PlantCardSecondary
+								key={item.id}
+								data={item}
+								handleRemove={() => handleRemove(item)}
+							/>
 						)
 					}}
 				/>
